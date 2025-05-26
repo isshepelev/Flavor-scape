@@ -2,6 +2,7 @@ package ru.isshepelev.flavorscape;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.Role;

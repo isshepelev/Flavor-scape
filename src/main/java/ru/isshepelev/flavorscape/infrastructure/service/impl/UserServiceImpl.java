@@ -23,40 +23,5 @@ import java.util.Set;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
 
-    @Override
-    public void signUp(SignUpDto signUp) {
-        if (!signUp.getPassword().equals(signUp.getRepeatPassword())){
-            throw new PasswordsNotMatchException("Passwords do not match");
-        }
-        if (userRepository.existsByUsername(signUp.getUsername())){
-            throw new UsernameAlreadyExistsException("User already exist");
-        }
-
-        User user = new User();
-        user.setPassword(passwordEncoder.encode(signUp.getPassword()));
-        user.setUsername(signUp.getUsername());
-        user.setRoles(Set.of());
-        userRepository.save(user);
-    }
-
-    @Override
-    public void signIn(SignInDto signIn) {
-        User user = userRepository.findByUsername(signIn.getUsername());
-        if (user == null){
-            throw new RuntimeException("User not found");
-        }
-        if (!passwordEncoder.matches(signIn.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                        signIn.getUsername(),
-                        signIn.getPassword()
-                ));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
 }
