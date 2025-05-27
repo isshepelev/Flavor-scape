@@ -20,8 +20,8 @@ spring:
 
 
   kafka:
-    bootstrap-servers: localhost:9092 #localhost:9092 kafka:9092
+    bootstrap-servers: kafka:9092 #localhost:9092 kafka:9092
 
 
 api_key:
-  2gis:
+  2gis: https://platform.2gis.ru/ru/keys получить api ключ

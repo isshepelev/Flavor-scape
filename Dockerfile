@@ -7,6 +7,6 @@ RUN ls /app/target
 
 FROM openjdk:17-oracle
 ENV JAVA_OPTS="-Xmx256m"
-COPY --from=build /app/target/.jar app.jar
+COPY --from=build /app/target/Flavorscape-0.0.1.jar app.jar
 EXPOSE 8080
 CMD ["sh", "-c", "exec java -Djava.security.egd=file:/dev/./urandom $JAVA_OPTS -jar app.jar"]
