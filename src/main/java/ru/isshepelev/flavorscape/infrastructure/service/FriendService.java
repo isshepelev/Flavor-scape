@@ -9,11 +9,16 @@ import java.util.List;
 
 public interface FriendService {
 
-    void sendFriendRequest(Long senderId, Long recipientId);
 
-    void acceptFriendRequest(Long requestId, Long userId);
+    void sendFriendRequest(String senderUsername, Long recipientId);
 
-    void rejectFriendRequest(Long requestId, Long userId);
+    void acceptFriendRequest(Long requestId, String username);
+
+    void rejectFriendRequest(Long requestId, String username);
+
+    void blockedUserRequest(Long requestId, String username);
+
+    void removeFromFriendsRequest(Long requestId, String username);
 
     List<FriendRequestDto> getPendingRequests(Long userId);
 

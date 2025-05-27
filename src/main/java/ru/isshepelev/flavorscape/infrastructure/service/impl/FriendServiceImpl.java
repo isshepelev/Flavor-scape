@@ -1,6 +1,8 @@
 package ru.isshepelev.flavorscape.infrastructure.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Transient;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,9 @@ public class FriendServiceImpl implements FriendService {
     private static final String FRIEND_REQUEST_TOPIC = "friend-requests";
 
     @Override
-    public void sendFriendRequest(Long senderId, Long recipientId) {
-        User sender = userRepository.findById(senderId).orElseThrow(() -> new EntityNotFoundException("User not found with id: " + senderId));
+    public void sendFriendRequest(String senderUsername, Long recipientId) {
+        User sender = userRepository.findByUsername(senderUsername);
+        if (sender == null) throw new EntityNotFoundException("User not found with username: " + senderUsername);
         User recipient = userRepository.findById(recipientId).orElseThrow(() -> new EntityNotFoundException("User not found with id: " + recipientId));
 
         Optional<UserFriend> existingRelation = userFriendRepository.findByUserAndFriend(sender, recipient);
@@ -77,15 +80,19 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public void acceptFriendRequest(Long requestId, Long userId) {
+    public void acceptFriendRequest(Long requestId, String username) {
         UserFriend friendRequest = userFriendRepository.findById(requestId).orElseThrow(() -> new EntityNotFoundException("Friend request not found"));
 
-        if (!friendRequest.getFriend().getId().equals(userId)) {
+        if (!friendRequest.getFriend().getId().equals(userRepository.findByUsername(username).getId())) {
             throw new SecurityException("You can't accept this friend request");
         }
 
         if (friendRequest.getStatus() == UserFriend.FriendStatus.ACCEPTED) {
             throw new AlreadyFriendsException("Friend request already accepted");
+        }
+
+        if (friendRequest.getStatus() != UserFriend.FriendStatus.PENDING) {
+            throw new IllegalStateException("Friend request is not in pending status");
         }
 
         boolean alreadyFriends = userFriendRepository.existsByUserAndFriendAndStatus(
@@ -118,12 +125,16 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public void rejectFriendRequest(Long requestId, Long userId) {
+    public void rejectFriendRequest(Long requestId, String username) {
         UserFriend friendRequest = userFriendRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Friend request not found"));
 
-        if (!friendRequest.getFriend().getId().equals(userId)) {
+        if (!friendRequest.getFriend().getId().equals(userRepository.findByUsername(username).getId())) {
             throw new SecurityException("You can't reject this friend request");
+        }
+
+        if (friendRequest.getStatus() == UserFriend.FriendStatus.ACCEPTED) {
+            throw new IllegalStateException("Cannot reject already accepted friend request");
         }
 
         friendRequest.setStatus(UserFriend.FriendStatus.REJECTED);
@@ -134,6 +145,41 @@ public class FriendServiceImpl implements FriendService {
                 friendRequest.getFriend().getUsername() + " отклонил ваш запрос на добавление в друзья",
                 friendRequest.getUser()
         );
+    }
+
+    @Override
+    @Transactional
+    public void blockedUserRequest(Long requestId, String username){
+        User currentUser = userRepository.findById(requestId).orElseThrow(() -> new EntityNotFoundException("Current user not found"));
+        User userToBlock = userRepository.findByUsername(username);
+        if (userToBlock == null) throw new EntityNotFoundException("User to block not found");
+
+        userFriendRepository.deleteByUserAndFriend(currentUser,userToBlock);
+        userFriendRepository.deleteByUserAndFriend(userToBlock,currentUser);
+
+        UserFriend blockRelation = new UserFriend();
+        blockRelation.setUser(currentUser);
+        blockRelation.setFriend(userToBlock);
+        blockRelation.setStatus(UserFriend.FriendStatus.BLOCKED);
+        blockRelation.setCreatedAt(LocalDateTime.now());
+        userFriendRepository.save(blockRelation);
+    }
+
+    @Override
+    @Transactional
+    public void removeFromFriendsRequest(Long requestId, String username){
+        User currentUser = userRepository.findById(requestId).orElseThrow(() -> new EntityNotFoundException("Current user not found"));
+        User friendToRemove  = userRepository.findByUsername(username);
+        if (friendToRemove == null) throw new EntityNotFoundException("User to remove not found");
+
+        boolean isFriend = userFriendRepository.existsByUserAndFriendAndStatus(currentUser,friendToRemove, UserFriend.FriendStatus.ACCEPTED);
+
+        if (!isFriend) throw new IllegalStateException("This user is not in your friends list");
+
+
+        userFriendRepository.deleteByUserAndFriend(currentUser, friendToRemove);
+        userFriendRepository.deleteByUserAndFriend(friendToRemove, currentUser);
+
     }
 
     @Override

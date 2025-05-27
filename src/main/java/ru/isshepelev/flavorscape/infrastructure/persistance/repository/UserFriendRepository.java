@@ -21,4 +21,6 @@ public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
     List<UserFriend> findByUserAndStatus(User user, UserFriend.FriendStatus status);
 
     List<UserFriend> findByFriendAndStatus(User friend, UserFriend.FriendStatus status);
+
+    void deleteByUserAndFriend(User user, User friend);
 }

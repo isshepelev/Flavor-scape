@@ -9,11 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.isshepelev.flavorscape.infrastructure.exception.AlreadyFriendsException;
 import ru.isshepelev.flavorscape.infrastructure.exception.FriendRequestAlreadySentException;
 import ru.isshepelev.flavorscape.infrastructure.exception.UserBlockedException;
-import ru.isshepelev.flavorscape.infrastructure.persistance.entity.User;
-import ru.isshepelev.flavorscape.infrastructure.persistance.entity.UserFriend;
 import ru.isshepelev.flavorscape.infrastructure.service.FriendService;
 
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +22,7 @@ public class FriendController {
     @PostMapping("/request/{recipientId}")
     public ResponseEntity<?> sendFriendRequest(@PathVariable Long recipientId, @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            friendService.sendFriendRequest(Long.valueOf(userDetails.getUsername()), recipientId);
+            friendService.sendFriendRequest(userDetails.getUsername(), recipientId);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return ResponseEntity.badRequest().body("Пользователь не найден");
@@ -34,15 +31,14 @@ public class FriendController {
         } catch (AlreadyFriendsException e) {
             return ResponseEntity.badRequest().body("Уже у вас в друзьях");
         } catch (UserBlockedException e) {
-            ResponseEntity.badRequest().body("Пользователь заблокировал вас");
-            return ResponseEntity.ok().build();
+            return ResponseEntity.badRequest().body("Пользователь заблокировал вас");
         }
     }
 
     @PostMapping("/accept/{requestId}")
     public ResponseEntity<?> acceptFriendRequest(@PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            friendService.acceptFriendRequest(requestId, Long.valueOf(userDetails.getUsername()));
+            friendService.acceptFriendRequest(requestId,userDetails.getUsername());
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e ){
             return ResponseEntity.badRequest().body("Пользователь не найден");
@@ -50,18 +46,44 @@ public class FriendController {
             return ResponseEntity.badRequest().body("Вы не можете принять этот запрос");
         } catch (AlreadyFriendsException e ){
             return ResponseEntity.badRequest().body("Уже у вас в друзьях");
+        } catch (IllegalStateException e ){
+            return ResponseEntity.badRequest().body("Запрос на добавление в друзья не находится в статусе ожидания");
         }
     }
 
     @PostMapping("/reject/{requestId}")
     public ResponseEntity<?> rejectFriendRequest(@PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            friendService.rejectFriendRequest(requestId, Long.valueOf(userDetails.getUsername()));
+            friendService.rejectFriendRequest(requestId, userDetails.getUsername());
             return ResponseEntity.ok().build();
         }catch (EntityNotFoundException e ) {
             return ResponseEntity.badRequest().body("Запрос на дружбу не найден");
         }catch (SecurityException e ){
             return ResponseEntity.badRequest().body("Вы не можете принять этот запрос");
+        }catch (IllegalStateException e){
+            return ResponseEntity.badRequest().body("Невозможно отклонить уже принятый запрос в друзья");
+        }
+    }
+
+    @PostMapping("/blocked/{requestId}")
+    public ResponseEntity<?> blockedUserRequest(@PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails){
+        try {
+            friendService.blockedUserRequest(requestId, userDetails.getUsername());
+            return ResponseEntity.ok().build();
+        }catch (EntityNotFoundException e){
+            return ResponseEntity.badRequest().body("Пользователь не найден");
+        }
+    }
+
+    @PostMapping("/remove/{requestId}")
+    public ResponseEntity<?> removeFriendRequest(@PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails){
+        try {
+            friendService.removeFromFriendsRequest(requestId, userDetails.getUsername());
+            return ResponseEntity.ok().build();
+        }catch (EntityNotFoundException e){
+            return ResponseEntity.badRequest().body("Пользователь не найден");
+        }catch (IllegalStateException e){
+            return ResponseEntity.badRequest().body("Этот пользователь не в вашем списке друзей");
         }
     }
 
