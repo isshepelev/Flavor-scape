@@ -1,1 +1,27 @@
-spring.application.name=Flavorscape
+spring:
+  datasource:
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://localhost:5432/flavorscape
+    driverClassName: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+
+  redis:
+    host: redis #localhost redis
+    port: 6379
+
+
+  session:
+    timeout: 60m
+    store-type: redis
+
+
+  kafka:
+    bootstrap-servers: localhost:9092 #localhost:9092 kafka:9092
+
+
+api_key:
+  2gis:
