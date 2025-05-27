@@ -68,6 +68,12 @@ public class FriendServiceImpl implements FriendService {
         userFriendRepository.save(friendRequest);
 
         sendFriendRequestEvent(sender, recipient, friendRequest.getId());
+
+        notificationService.createNotification(
+                "Запрос в друзья",
+                sender.getUsername() + " хочет добавить вас в друзья!",
+                recipient
+        );
     }
 
     @Override
@@ -105,8 +111,8 @@ public class FriendServiceImpl implements FriendService {
         }
 
         notificationService.createNotification(
-                "Friend request accepted",
-                friendRequest.getFriend().getUsername() + " accepted your friend request",
+                "Запрос на добавление в друзья принят",
+                friendRequest.getFriend().getUsername() + " принял ваш запрос на добавление в друзья",
                 friendRequest.getUser()
         );
     }
@@ -124,8 +130,8 @@ public class FriendServiceImpl implements FriendService {
         userFriendRepository.save(friendRequest);
 
         notificationService.createNotification(
-                "Friend request rejected",
-                friendRequest.getFriend().getUsername() + " rejected your friend request",
+                "Запрос на добавление в друзья отклонен",
+                friendRequest.getFriend().getUsername() + " отклонил ваш запрос на добавление в друзья",
                 friendRequest.getUser()
         );
     }
