@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import ru.isshepelev.flavorscape.infrastructure.exception.InvalidOldPasswordException;
 import ru.isshepelev.flavorscape.infrastructure.exception.PasswordsNotMatchException;
 import ru.isshepelev.flavorscape.infrastructure.exception.UsernameAlreadyExistsException;
+import ru.isshepelev.flavorscape.infrastructure.persistance.entity.Role;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.User;
+import ru.isshepelev.flavorscape.infrastructure.persistance.repository.RoleRepository;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserRepository;
 import ru.isshepelev.flavorscape.infrastructure.service.AuthenticateService;
 import ru.isshepelev.flavorscape.ui.dto.ChangePasswordDto;
@@ -28,6 +30,7 @@ public class AuthenticateServiceImpl implements AuthenticateService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final RoleRepository roleRepository;
 
     @Override
     public void signUp(SignUpDto signUp) {
@@ -38,10 +41,12 @@ public class AuthenticateServiceImpl implements AuthenticateService {
             throw new UsernameAlreadyExistsException("User already exist");
         }
 
+        Role roleUser = roleRepository.findByName("ROLE_USER"); //TODO переделать добавление роли при регистрации
+
         User user = new User();
         user.setPassword(passwordEncoder.encode(signUp.getPassword()));
         user.setUsername(signUp.getUsername());
-        user.setRoles(Set.of());
+        user.setRoles(Set.of(roleUser));
         userRepository.save(user);
     }
 

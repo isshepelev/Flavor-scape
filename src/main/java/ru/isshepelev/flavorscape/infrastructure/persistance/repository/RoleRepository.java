@@ -7,4 +7,5 @@ import ru.isshepelev.flavorscape.infrastructure.persistance.entity.Role;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
+    Role findByName(String name);
 }
