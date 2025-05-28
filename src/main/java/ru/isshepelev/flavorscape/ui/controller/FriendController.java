@@ -65,7 +65,7 @@ public class FriendController {
         }
     }
 
-    @PostMapping("/blocked/{requestId}")
+    @PostMapping("/blocked/{requestId}")                                                                                            //TODO добавить чтобы можно было разблокировать пользователя
     public ResponseEntity<?> blockedUserRequest(@PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails){
         try {
             friendService.blockedUserRequest(requestId, userDetails.getUsername());

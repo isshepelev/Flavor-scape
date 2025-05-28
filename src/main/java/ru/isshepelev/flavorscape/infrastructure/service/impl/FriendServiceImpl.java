@@ -11,6 +11,7 @@ import ru.isshepelev.flavorscape.infrastructure.exception.FriendRequestAlreadySe
 import ru.isshepelev.flavorscape.infrastructure.exception.UserBlockedException;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.User;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.UserFriend;
+import ru.isshepelev.flavorscape.infrastructure.persistance.entity.enums.FriendStatus;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserFriendRepository;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserRepository;
 import ru.isshepelev.flavorscape.infrastructure.service.FriendService;
@@ -23,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static ru.isshepelev.flavorscape.infrastructure.persistance.entity.enums.FriendStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +47,7 @@ public class FriendServiceImpl implements FriendService {
         Optional<UserFriend> existingRelation = userFriendRepository.findByUserAndFriend(sender, recipient);
 
         if (existingRelation.isPresent()) {
-            UserFriend.FriendStatus currentStatus = existingRelation.get().getStatus();
+            FriendStatus currentStatus = existingRelation.get().getStatus();
 
             switch (currentStatus) {
                 case PENDING:
@@ -52,7 +55,7 @@ public class FriendServiceImpl implements FriendService {
                 case ACCEPTED:
                     throw new AlreadyFriendsException("You are already friends with this user");
                 case REJECTED:
-                    existingRelation.get().setStatus(UserFriend.FriendStatus.PENDING);
+                    existingRelation.get().setStatus(PENDING);
                     existingRelation.get().setCreatedAt(LocalDateTime.now());
                     userFriendRepository.save(existingRelation.get());
 
@@ -66,7 +69,7 @@ public class FriendServiceImpl implements FriendService {
         UserFriend friendRequest = new UserFriend();
         friendRequest.setUser(sender);
         friendRequest.setFriend(recipient);
-        friendRequest.setStatus(UserFriend.FriendStatus.PENDING);
+        friendRequest.setStatus(PENDING);
         friendRequest.setCreatedAt(LocalDateTime.now());
         userFriendRepository.save(friendRequest);
 
@@ -87,32 +90,32 @@ public class FriendServiceImpl implements FriendService {
             throw new SecurityException("You can't accept this friend request");
         }
 
-        if (friendRequest.getStatus() == UserFriend.FriendStatus.ACCEPTED) {
+        if (friendRequest.getStatus() == ACCEPTED) {
             throw new AlreadyFriendsException("Friend request already accepted");
         }
 
-        if (friendRequest.getStatus() != UserFriend.FriendStatus.PENDING) {
+        if (friendRequest.getStatus() != PENDING) {
             throw new IllegalStateException("Friend request is not in pending status");
         }
 
         boolean alreadyFriends = userFriendRepository.existsByUserAndFriendAndStatus(
                 friendRequest.getFriend(),
                 friendRequest.getUser(),
-                UserFriend.FriendStatus.ACCEPTED
+                ACCEPTED
         );
 
         if (alreadyFriends) {
             throw new AlreadyFriendsException("You are already friends with this user");
         }
 
-        friendRequest.setStatus(UserFriend.FriendStatus.ACCEPTED);
+        friendRequest.setStatus(ACCEPTED);
         userFriendRepository.save(friendRequest);
 
         if (!userFriendRepository.existsByUserAndFriend(friendRequest.getFriend(), friendRequest.getUser())) {
             UserFriend reciprocalFriend = new UserFriend();
             reciprocalFriend.setUser(friendRequest.getFriend());
             reciprocalFriend.setFriend(friendRequest.getUser());
-            reciprocalFriend.setStatus(UserFriend.FriendStatus.ACCEPTED);
+            reciprocalFriend.setStatus(ACCEPTED);
             reciprocalFriend.setCreatedAt(LocalDateTime.now());
             userFriendRepository.save(reciprocalFriend);
         }
@@ -133,11 +136,11 @@ public class FriendServiceImpl implements FriendService {
             throw new SecurityException("You can't reject this friend request");
         }
 
-        if (friendRequest.getStatus() == UserFriend.FriendStatus.ACCEPTED) {
+        if (friendRequest.getStatus() == ACCEPTED) {
             throw new IllegalStateException("Cannot reject already accepted friend request");
         }
 
-        friendRequest.setStatus(UserFriend.FriendStatus.REJECTED);
+        friendRequest.setStatus(REJECTED);
         userFriendRepository.save(friendRequest);
 
         notificationService.createNotification(
@@ -160,7 +163,7 @@ public class FriendServiceImpl implements FriendService {
         UserFriend blockRelation = new UserFriend();
         blockRelation.setUser(currentUser);
         blockRelation.setFriend(userToBlock);
-        blockRelation.setStatus(UserFriend.FriendStatus.BLOCKED);
+        blockRelation.setStatus(FriendStatus.BLOCKED);
         blockRelation.setCreatedAt(LocalDateTime.now());
         userFriendRepository.save(blockRelation);
     }
@@ -172,7 +175,7 @@ public class FriendServiceImpl implements FriendService {
         User friendToRemove  = userRepository.findByUsername(username);
         if (friendToRemove == null) throw new EntityNotFoundException("User to remove not found");
 
-        boolean isFriend = userFriendRepository.existsByUserAndFriendAndStatus(currentUser,friendToRemove, UserFriend.FriendStatus.ACCEPTED);
+        boolean isFriend = userFriendRepository.existsByUserAndFriendAndStatus(currentUser,friendToRemove, ACCEPTED);
 
         if (!isFriend) throw new IllegalStateException("This user is not in your friends list");
 
@@ -187,7 +190,7 @@ public class FriendServiceImpl implements FriendService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        return userFriendRepository.findByFriendAndStatus(user, UserFriend.FriendStatus.PENDING)
+        return userFriendRepository.findByFriendAndStatus(user, PENDING)
                 .stream()
                 .map(request -> new FriendRequestDto(
                         request.getId(),
@@ -203,7 +206,7 @@ public class FriendServiceImpl implements FriendService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        return userFriendRepository.findByUserAndStatus(user, UserFriend.FriendStatus.ACCEPTED)
+        return userFriendRepository.findByUserAndStatus(user, ACCEPTED)
                 .stream()
                 .map(UserFriend::getFriend)
                 .map(friend -> new FriendDto(

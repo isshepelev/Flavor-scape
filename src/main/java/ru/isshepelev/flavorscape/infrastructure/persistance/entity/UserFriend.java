@@ -3,6 +3,7 @@ package ru.isshepelev.flavorscape.infrastructure.persistance.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import ru.isshepelev.flavorscape.infrastructure.persistance.entity.enums.FriendStatus;
 
 import java.time.LocalDateTime;
 
@@ -29,10 +30,4 @@ public class UserFriend {
 
     private LocalDateTime createdAt;
 
-    public enum FriendStatus {
-        PENDING,
-        ACCEPTED,
-        REJECTED,
-        BLOCKED
-    }
 }

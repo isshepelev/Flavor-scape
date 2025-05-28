@@ -3,6 +3,8 @@ package ru.isshepelev.flavorscape.infrastructure.persistance.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+import ru.isshepelev.flavorscape.infrastructure.persistance.entity.enums.GeneralImpression;
 
 import java.time.LocalDateTime;
 
@@ -14,13 +16,16 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String content;
-
-    private int rating;
-
     private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    private GeneralImpression generalImpression;
+
+    @Embedded
+    private Critique critique;
+
+    private double generalRating;
+
+    private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
@@ -30,20 +35,4 @@ public class Review {
     @JoinColumn(name = "place_id")
     private Place place;
 
-    public Review() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public Review(String content, int rating, User author, Place place) {
-        this();
-        this.content = content;
-        this.rating = rating;
-        this.author = author;
-        this.place = place;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
