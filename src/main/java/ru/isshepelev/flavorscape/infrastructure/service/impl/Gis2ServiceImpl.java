@@ -11,6 +11,7 @@ import ru.isshepelev.flavorscape.infrastructure.api.Gis2ApiClient;
 import ru.isshepelev.flavorscape.infrastructure.service.Gis2Service;
 import ru.isshepelev.flavorscape.infrastructure.service.dto.OrganizationDto;
 import ru.isshepelev.flavorscape.infrastructure.service.dto.OrganizationListDto;
+import ru.isshepelev.flavorscape.ui.dto.ApiConfigDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,14 +30,15 @@ public class Gis2ServiceImpl implements Gis2Service {
     private String organizationTopic;
 
     @Override
-    public List<OrganizationDto> searchOrganizations(String placeName, String coordinates, String radius, boolean workTime) {
+    public List<OrganizationDto> searchOrganizations(ApiConfigDto config) {
         String response;
-        if (workTime) {
+        String coordinates = config.getLongitude() + "%2C" + config.getLatitude();
+        if (config.isWorkTime()) {
             response = gis2ApiClient.searchOrganizationsWithWorkTime(
-                    placeName, coordinates, radius, "now", apiKey, "branch");
+                    config.getPlaceName(), coordinates, config.getRadius(), "now", apiKey, "branch");
         } else {
             response = gis2ApiClient.searchOrganizations(
-                    placeName, coordinates, radius, apiKey, "branch");
+                    config.getPlaceName(), coordinates, config.getRadius(), apiKey, "branch");
         }
 
         try {
