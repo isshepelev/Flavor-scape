@@ -1,4 +1,4 @@
-package ru.isshepelev.flavorscape.infrastructure.gpt;
+package ru.isshepelev.flavorscape.infrastructure.api;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

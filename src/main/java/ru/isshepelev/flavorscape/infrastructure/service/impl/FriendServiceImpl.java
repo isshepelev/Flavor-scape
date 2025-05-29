@@ -1,10 +1,8 @@
 package ru.isshepelev.flavorscape.infrastructure.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.Transient;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.isshepelev.flavorscape.infrastructure.exception.AlreadyFriendsException;
 import ru.isshepelev.flavorscape.infrastructure.exception.FriendRequestAlreadySentException;
@@ -18,7 +16,6 @@ import ru.isshepelev.flavorscape.infrastructure.service.FriendService;
 import ru.isshepelev.flavorscape.infrastructure.service.NotificationService;
 import ru.isshepelev.flavorscape.infrastructure.service.dto.FriendDto;
 import ru.isshepelev.flavorscape.infrastructure.service.dto.FriendRequestDto;
-import ru.isshepelev.flavorscape.infrastructure.service.dto.FriendRequestEventDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,9 +31,7 @@ public class FriendServiceImpl implements FriendService {
     private final UserRepository userRepository;
     private final UserFriendRepository userFriendRepository;
     private final NotificationService notificationService;
-    private final KafkaTemplate<String, FriendRequestEventDto> kafkaTemplate;
 
-    private static final String FRIEND_REQUEST_TOPIC = "friend-requests";
 
     @Override
     public void sendFriendRequest(String senderUsername, Long recipientId) {
@@ -59,7 +54,6 @@ public class FriendServiceImpl implements FriendService {
                     existingRelation.get().setCreatedAt(LocalDateTime.now());
                     userFriendRepository.save(existingRelation.get());
 
-                    sendFriendRequestEvent(sender, recipient, existingRelation.get().getId());
                     return;
                 case BLOCKED:
                     throw new UserBlockedException("You cannot send friend request to this user");
@@ -73,7 +67,6 @@ public class FriendServiceImpl implements FriendService {
         friendRequest.setCreatedAt(LocalDateTime.now());
         userFriendRepository.save(friendRequest);
 
-        sendFriendRequestEvent(sender, recipient, friendRequest.getId());
 
         notificationService.createNotification(
                 "Запрос в друзья",
@@ -214,15 +207,5 @@ public class FriendServiceImpl implements FriendService {
                         friend.getUsername()
                 ))
                 .collect(Collectors.toList());
-    }
-
-    private void sendFriendRequestEvent(User sender, User recipient, Long requestId) {
-        FriendRequestEventDto event = new FriendRequestEventDto(
-                sender.getId(),
-                sender.getUsername(),
-                recipient.getId(),
-                requestId
-        );
-        kafkaTemplate.send(FRIEND_REQUEST_TOPIC, event);
     }
 }

@@ -4,7 +4,7 @@ import ru.isshepelev.flavorscape.infrastructure.service.dto.OrganizationDto;
 
 import java.util.List;
 
-public interface PlaceService {
+public interface Gis2Service {
 
-    void savePlacesToDatabase(List<OrganizationDto> organizationDtos) throws InterruptedException;
+    List<OrganizationDto> searchOrganizations(String placeName, String coordinates, String radius, boolean workTime);
 }
