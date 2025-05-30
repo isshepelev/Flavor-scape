@@ -1,6 +1,7 @@
 package ru.isshepelev.flavorscape.infrastructure.api;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,8 @@ public class GenerateReview {
     @Value("${api_key.ai}")
     private String apiKeyAI;
 
-    public String generateAIReview(Long placeId, String username) throws IOException {
+    @SneakyThrows
+    public String generateAIReview(Long placeId, String username) {
         List<ReviewRequestDto> allReviews = reviewService.getAllReviewsForPlace(placeId);
         List<ReviewRequestDto> friendsReviews = reviewService.getFriendsReviewsForPlace(placeId, username);
 

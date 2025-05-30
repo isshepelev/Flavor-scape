@@ -8,8 +8,11 @@ import ru.isshepelev.flavorscape.infrastructure.persistance.entity.Notification;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.User;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.NotificationRepository;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserRepository;
+import ru.isshepelev.flavorscape.infrastructure.service.FriendService;
 import ru.isshepelev.flavorscape.infrastructure.service.NotificationService;
+import ru.isshepelev.flavorscape.infrastructure.service.dto.FriendDto;
 import ru.isshepelev.flavorscape.infrastructure.service.dto.NotificationDto;
+import ru.isshepelev.flavorscape.ui.dto.NotificationRequestDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,14 +22,15 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final FriendService friendService;
     private final UserRepository userRepository;
 
     @Override
-    public Notification createNotification(String title, String message, User user) {
+    public void createNotification(String title, String message, User user) {
         Notification notification = new Notification(title, message, user);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
-        return notificationRepository.save(notification);
+        notificationRepository.save(notification);
     }
 
     @Override
@@ -66,6 +70,19 @@ public class NotificationServiceImpl implements NotificationService {
                         e.getCreatedAt(),
                         e.isRead()
                 )).findAny().orElseThrow(() -> new EntityNotFoundException("Notification not found with id: " + notificationId));
+    }
+    @Override
+    public void notificateFriends(String username, NotificationRequestDto notificationRequestDto) {
+        User user = userRepository.findByUsername(username);
+        List<Long> userFriendsIds = friendService.getFriends(user.getId()).stream().map(FriendDto::friendId).toList();
+
+        notificationRequestDto.getFriendsId().stream().filter(userFriendsIds::contains).forEach(friendId ->{
+                    User friend = userRepository.findById(friendId).orElseThrow(() -> new EntityNotFoundException("user not found"));
+                    createNotification(notificationRequestDto.getTitle(), notificationRequestDto.getMessage(), friend);
+                }
+
+        );
+
     }
 
     private NotificationDto convertToDto(Notification notification) {

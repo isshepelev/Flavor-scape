@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import ru.isshepelev.flavorscape.infrastructure.exception.AlreadyFriendsException;
 import ru.isshepelev.flavorscape.infrastructure.exception.FriendRequestAlreadySentException;
 import ru.isshepelev.flavorscape.infrastructure.exception.UserBlockedException;
+import ru.isshepelev.flavorscape.infrastructure.persistance.entity.Notification;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.User;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.UserFriend;
 import ru.isshepelev.flavorscape.infrastructure.persistance.entity.enums.FriendStatus;
+import ru.isshepelev.flavorscape.infrastructure.persistance.repository.NotificationRepository;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserFriendRepository;
 import ru.isshepelev.flavorscape.infrastructure.persistance.repository.UserRepository;
 import ru.isshepelev.flavorscape.infrastructure.service.FriendService;
@@ -30,7 +32,7 @@ public class FriendServiceImpl implements FriendService {
 
     private final UserRepository userRepository;
     private final UserFriendRepository userFriendRepository;
-    private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
 
 
     @Override
@@ -68,7 +70,7 @@ public class FriendServiceImpl implements FriendService {
         userFriendRepository.save(friendRequest);
 
 
-        notificationService.createNotification(
+        createNotification(
                 "Запрос в друзья",
                 sender.getUsername() + " хочет добавить вас в друзья!",
                 recipient
@@ -113,7 +115,7 @@ public class FriendServiceImpl implements FriendService {
             userFriendRepository.save(reciprocalFriend);
         }
 
-        notificationService.createNotification(
+        createNotification(
                 "Запрос на добавление в друзья принят",
                 friendRequest.getFriend().getUsername() + " принял ваш запрос на добавление в друзья",
                 friendRequest.getUser()
@@ -136,7 +138,7 @@ public class FriendServiceImpl implements FriendService {
         friendRequest.setStatus(REJECTED);
         userFriendRepository.save(friendRequest);
 
-        notificationService.createNotification(
+        createNotification(
                 "Запрос на добавление в друзья отклонен",
                 friendRequest.getFriend().getUsername() + " отклонил ваш запрос на добавление в друзья",
                 friendRequest.getUser()
@@ -207,5 +209,12 @@ public class FriendServiceImpl implements FriendService {
                         friend.getUsername()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    private void createNotification(String title, String message, User user) {
+        Notification notification = new Notification(title, message, user);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
     }
 }

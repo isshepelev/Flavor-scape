@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import ru.isshepelev.flavorscape.infrastructure.api.GenerateReview;
 import ru.isshepelev.flavorscape.infrastructure.service.ReviewService;
 import ru.isshepelev.flavorscape.ui.dto.ReviewDto;
 
@@ -14,6 +15,7 @@ import ru.isshepelev.flavorscape.ui.dto.ReviewDto;
 @RequestMapping("/place/{placeId}/review")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final GenerateReview generateReview;
 
     @PostMapping
     public ResponseEntity<?> createReview(@PathVariable Long placeId, @RequestBody ReviewDto reviewDto, @AuthenticationPrincipal UserDetails userDetails){
@@ -42,6 +44,15 @@ public class ReviewController {
             return ResponseEntity.ok(reviewService.getFriendsReviewsForPlace(placeId, userDetails.getUsername()));
         }catch (EntityNotFoundException e){
             return ResponseEntity.badRequest().body("Заведение или пользователь не найдены");
+        }
+    }
+
+    @PostMapping("/ai")
+    public ResponseEntity<?> generateAIReview(@PathVariable Long placeId, @AuthenticationPrincipal UserDetails userDetails){
+        try {
+            return ResponseEntity.ok(generateReview.generateAIReview(placeId, userDetails.getUsername()));
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body("Произошла ошибка при генерации отчета ИИ");
         }
     }
 
