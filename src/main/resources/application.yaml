@@ -21,7 +21,10 @@ spring:
 
   kafka:
     bootstrap-servers: kafka:9092 #localhost:9092 kafka:9092
+    topic:
+      organizations: organizationTopic
 
 
 api_key:
-  2gis: https://platform.2gis.ru/ru/keys получить api ключ
+  2gis: #https://platform.2gis.ru/ru/keys получить api ключ 2gis
+  ai: #https://openrouter.ai/ получить api ключ ai (нужен именно gpt)
